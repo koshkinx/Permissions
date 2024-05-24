@@ -1,0 +1,16 @@
+<h1>{{ chat.name }}</h1>
+<ul>
+  {% for message in chat.messages.all %}
+  <li>
+    <strong>{{ message.author.username }}:</strong> {{ message.content }} {% if
+    message.author == user %}
+    <a href="{% url 'edit_message' message.id %}">Редагувати</a>
+    <a href="{% url 'delete_message' message.id %}">Видалити</a>
+    {% endif %}
+  </li>
+  {% endfor %}
+</ul>
+<form method="post">
+  {% csrf_token %} {{ form.as_p }}
+  <button type="submit">Надіслати</button>
+</form>
