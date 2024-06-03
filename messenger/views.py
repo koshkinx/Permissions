@@ -1,14 +1,15 @@
 from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib.auth.decorators import login_required, permission_required
 from django.contrib.auth.models import User
-from .models import Chat, Message
+from .models import Chat, Message, MessageLog
 from .forms import MessageForm
 from django.views.generic import View
 from django.http import HttpResponse
 from django.views.generic import DetailView, UpdateView, DeleteView
-from .models import Chat, Message
+from django.contrib import messages
 from .mixins import UppercaseMixin, AddTimestampMixin, PrefixAuthorMixin
-
+from django.shortcuts import render, redirect
+from django.contrib import messages
 # Класс для детального просмотра сообщений с миксинами для обработки данных
 
 
@@ -46,6 +47,13 @@ def chat_detail(request, chat_id):
             message.chat = chat  # Привязываем сообщение к текущему чату
             message.author = request.user  # Устанавливаем автора сообщения
             message.save()  # Сохраняем сообщение в БД
+
+            # Проверяем, является ли получатель суперпользователем
+            if message.chat.users.filter(is_superuser=True).exists():
+                # Если да, создаем сообщение о успешной отправке сообщения суперпользователю
+                messages.success(
+                    request, "Вы успешно отправили сообщение суперпользователю")
+
             # Перенаправляем на детальный просмотр чата
             return redirect('chat_detail', chat_id=chat.id)
     else:
@@ -96,3 +104,29 @@ def delete_message(request, message_id):
         message.delete()  # Удаляем сообщение
     # Перенаправляем на детальный просмотр чата
     return redirect('chat_detail', chat_id=message.chat.id)
+
+
+# @login_required
+# def send_message(request):
+#     if request.method == 'POST':
+#         form = MessageForm(request.POST)
+#         if form.is_valid():
+#             message = form.save(commit=False)
+#             message.sender = request.user
+#             message.save()
+#             messages.success(request, 'Message sent successfully nice!')
+#             return redirect('message_success')
+#     else:
+#         form = MessageForm()
+#     return render(request, 'messenger/edit_message.html', {'form': form})
+
+
+def add_message(request):
+    if request.method == 'POST':
+        form = MessageForm(request.POST)
+        if form.is_valid():
+            form.save(request)
+            return redirect('some-view-name')
+    else:
+        form = MessageForm()
+    return render(request, 'messenger/edit_message.html', {'form': form})
